@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script>
+        const UserID = `<%= user %>`;
+        const date = Today();
+        
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString)
+        const boardId = urlParams.get("boardId")
+
+
+        function XSSCheck(str, level) {
+            if (level == undefined || level == 0) {
+                str = str.replace(/\<|\>|\"|\'|\%|\;|\(|\)|\&|\+|\-/g, '');
+            } else if (level != undefined && level == 1) {
+                str = str.replace(/\</g, '&lt;');
+                str = str.replace(/\>/g, '&gt;');
+            }
+            return str;
+        }
+
+
+        $(document).ready(function () {
+            detail_View();
+            detail_comment();
+        })
+        // 상세 조회 페이지
+        function detail_View() {
+            $.ajax({
+                type: "GET",
+                url: `/updateApi/board/${boardId}`,
+                data: {},
+                success: function (response) {
+                    let detailBoard = response["detail"];
+                    let temphtml = `
+                                <section class="section" style='margin: auto;'>
+                                    <article class="message is-dark">
+                                        <div class="message-header">
+                                            <p>제목 : ${detailBoard["title"]}<div style="text-align: right;">날짜 : ${detailBoard["date"].substring(0, 10)}</p>작성자 : ${detailBoard["writer"]}</p></div>
+                                            
+                                        </div>
+                                        <div class="message-body">
+                                            내용 : ${detailBoard["content"]}
+                                        </div>
+                                    </article>
+                                </section>
+
+                    `
+                    $('#table').append(temphtml)
+                }
+            })
+        }
+
+        // 댓글 리스트 보여주기
+        function detail_comment() {
+            $.ajax({
+                type: "GET",
+                url: `/detail/comment/${boardId}`,
+                data: {},
+                success: function (response) {
+                    let detail_comments = response["commentList"];
+
+                    for (let i = 0; i < detail_comments.length; i++) {
+                        if (boardId == detail_comments[i]['boardID']) {
+                            let userName = detail_comments[i]['authID']
+                            let date = detail_comments[i]['date']
+
+                            let nowYear = date.toString().slice(0, 4);
+                            let nowMonth = date.toString().slice(4, 6);
+                            let nowDay = date.toString().slice(6, 8);
+                            let nowHour = date.toString().slice(8, 10);
+                            let nowMin = date.toString().slice(10, 12);
+                            let nowSec = date.toString().slice(12, 14);
+                            let dates = nowYear + '-' + nowMonth + '-' + nowDay + ' ' + nowHour + ':' + nowMin + ':' + nowSec;
+
+                            let comment = detail_comments[i]['comment']
+                            let commentId = detail_comments[i]['_id']
+
+                            let temp_html = `<hr>
+                                            <article class="media" id="${commentId}1" style="display: show;">
+                                                <div class="media-content">
+                                                    <div class="content">
+                                                            <p>
+                                                                <span><strong style="font-size: 20px;">${userName}</strong>
+                                                                    <small>${dates}</small></span>
+                                                                <br>
+                                                                <span>${comment}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="media-right">
+                                                        <button onclick="edit_comment('${commentId}')" value="">수정</button>
+                                                    </div>
+                                                    <div class="media-right">
+                                                        <button onclick="del_comment('${commentId}')" value="">삭제</button>
+                                                </div>
+
+
+                                            </article>
+
+                                                <div id="${commentId}2" value="${commentId}" style="display: none;">
+                                                    <input type="text" name="newedit_comment" id="newedit_comment${[i,]}"><button value ="${commentId} newedit_comment${i}" onclick="editSubmit(this.value)">수정완료</button>
+                                                </div>
+
+
+                            `
+                            $('#comment_text').append(temp_html)
+                        }
+                    }
+
+                }
+            })
+        }
+
+        // 댓글 삭제
+        function del_comment(value) {
+            if (!confirm('삭제하시겠습니까?')) {
+                return false;
+            } else {
+                $.ajax({
+                    type: 'DELETE',
+                    url: `/detail/delcomment/${boardId}`,
+                    data: {
+                        value: value,
+                    },
+                    success: function (response) {
+                        alert('삭제되었습니다');
+                        window.location.reload();
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 400) {
+                            alert('본인의 글만 삭제가능합니다');
+                        }
+                    },
+                });
+            }
+        }
+
+
+        // 댓글 작성
+        function CreateComment() {
+            const comment = $('#comment').val();
+
+            if (!UserID) {
+                alert('로그인이 필요한 기능입니다.');
+                window.location.href = "/signin"
+                return;
+            } else if (!comment.length) {
+                alert('빈 댓글은 작성할 수 없습니다.');
+                return;
+            } else {
+
+                $.ajax({
+                    type: 'POST',
+                    url: `/detail/comment/${boardId}`,
+                    data: {
+                        authID: UserID,
+                        comment: comment,
+                        boardID: boardId,
+                        date: date
+                    },
+                    success: function (response) {
+
+                        location.reload();
+                    }
+                })
+            }
+        }
+
+
+
+
+
+        // 댓글 수정버튼누르면 값가져오기
+        function edit_comment(value) {
+            $.ajax({
+                type: 'POST',
+                url: `/detail/editcomment/${boardId}`,
+                data: {
+                    value: value,
+                },
+                success: function (response) {
+                    console.log(response)
+                    $('input[name=newedit_comment').attr('value', response);
+                    $(`#${value}` + '1').hide();
+                    $(`#${value}` + '2').show();
+                },
+                error: function (xhr, status, err) {
+                    if (xhr.status === 400) {
+                        alert('본인의 글만 수정가능합니다.');
+                    }
+                },
+            });
+        }
+
+        // 댓글 수정하고 저장
+        function editSubmit(value) {
+            value1 = value.split(' ')[0];
+            console.log(value1)
+            value2 = value.split(' ')[1];
+            console.log(value2)
+            let editComment = $(`#${value2}`).val();
+            console.log(editComment);
+            $.ajax({
+                type: 'PATCH',
+                url: `/detail/editSubmit/${boardId}`,
+                data: {
+                    value: value1,
+                    editComment_give: XSSCheck(editComment),
+                },
+                success: function (response) {
+                    window.location.reload();
+                },
+            });
+        }
+
+
+
+
+
+
+
+        function Today() {
+            let today = new Date();
+
+            let year = today.getFullYear();
+            let month = ('0' + (today.getMonth() + 1)).slice(-2);
+            let day = ('0' + today.getDate()).slice(-2);
+            let hour = ('0' + today.getHours()).slice(-2);
+            let minutes = ('0' + today.getMinutes()).slice(-2);
+            let seconds = ('0' + today.getSeconds()).slice(-2);
+
+            return year + month + day + hour + minutes + seconds;
+        }
+
+
+        // 로그아웃 버튼
+        function log_out(){
+            $.removeCookie('user', {path: '/'});
+            location.href = '/signin';
+        }
+    </script>
+</head>
+
+<body>
+    <div class="tabs is-medium">
+        <ul>
+            <li class="is-active" onclick="location.href='/write'"><a>작성페이지</a></li>
+            <li class="is-active" onclick="location.href='/list'"><a>목록페이지</a></li>
+            <li class="is-active" onclick="location.href='/signup'"><a>회원가입페이지</a></li>
+            <li class="is-active" onclick="location.href='/signin'"><a>로그인페이지</a></li>
+        </ul>
+      </div>
+    <section class="section">
+        <section id="table">
+            <section class="hero is-small is-dark">
+                <div class="hero-body">
+                    <p class="title">
+                        게시글 조회 페이지
+                    </p>
+                </div>
+            </section>
+        </section>
+
+
+
+
+        <!-- 댓글리스트 -->
+        <div id="comment_text" style="margin: 150px auto; width: 50%;">
+
+            <!--  댓글작성  -->
+            <article class="media" style='margin-top: 30px;'>
+                <div class="media-content">
+                    <div class="field">
+                        <p class="control">
+                            <textarea id="comment" class="textarea" placeholder="댓글을 작성해주세요."></textarea>
+                        </p>
+                    </div>
+
+                    <nav class="level">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <button class="button is-info" onclick="CreateComment()">작성
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </article>
+
+
+
+
+
+
+
+        </div>
+
+
+</body>
+
+
+</section>
+
+
+
+
+</section>
+
+</body>
+
+</html>

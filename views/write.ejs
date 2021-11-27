@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script>        
+        const UserID = `<%= user %>`;
+
+        $(document).ready(function () {
+            if (!UserID){
+                alert("로그인이 필요합니다.")
+                location.href = '/signin';
+            } 
+        });
+
+        //글 작성하기
+        function writeBoard() {
+            
+            let date = new Date();
+            let title = $('#title').val();
+            let writer = $('#writer').val();
+            let passwd = $('#passwd').val();
+            let content = $('#content').val();
+
+            $.ajax({
+                type: "POST",
+                url: `/writeApi/board`,
+                data: {
+                    'title': title,
+                    'writer': writer,
+                    'passwd': passwd,
+                    'content': content,
+                    'date': date
+                },
+                success: function (response) {
+                    window.location.href = "/list"
+                }
+            });
+        }
+
+        // 로그아웃 버튼
+        function log_out(){
+            $.removeCookie('user', {path: '/'});
+            location.href = '/signin';
+        }
+    </script>
+</head>
+
+<body>
+    <% if (user) { %>
+        <a style="float: right; color: red;" ><%= user %>님, 로그인중입니다.<button class="button is-dark" onclick="log_out();">로그아웃</button></a>
+    <% } %>
+
+    <div class="tabs is-medium">
+        <ul>
+            <li class="is-active" onclick="location.href='/write'"><a>작성페이지</a></li>
+            <li class="is-active" onclick="location.href='/list'"><a>목록페이지</a></li>
+            <li class="is-active" onclick="location.href='/signup'"><a>회원가입페이지</a></li>
+            <li class="is-active" onclick="location.href='/signin'"><a>로그인페이지</a></li>
+        </ul>
+      </div>
+    <section class="section">
+        <section class="hero is-small is-danger">
+            <div class="hero-body">
+                <p class="title">
+                    게시글 작성 페이지
+                </p>
+            </div>
+        </section>
+    </section>
+
+
+    <section class="section">
+
+        <div class="field">
+            <label class="label">작성자명</label>
+            <input id="writer" class="input is-danger" type="text" placeholder="작성자명 입력">
+        </div>
+
+        <div class="field">
+            <label class="label">비밀번호</label>
+            <input id="passwd" class="input is-danger" type="password" placeholder="비밀번호 입력">
+        </div>
+
+        <div class="field">
+            <label class="label">제목</label>
+            <input id="title" class="input is-danger" type="text" placeholder="제목 입력">
+        </div>
+
+        <div class="field">
+            <label class="label">내용</label>
+            <textarea id="content" class="textarea is-danger" placeholder="내용 입력"></textarea>
+        </div>
+
+        <div class="buttons">
+            <button class="button is-danger" onclick="writeBoard();">작성하기</button>
+            
+        </div>
+
+    </section>
+
+</body>
+
+</html>

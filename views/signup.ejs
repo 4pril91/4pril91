@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script>
+        const UserID = `<%= user %>`;
+
+        function is_nickname(asValue) {
+            var regExp = /^[A-Za-z0-9+]{3,20}$/;
+            return regExp.test(asValue);
+        }
+
+        function is_password(asValue) {
+            var regExp = /^[A-Za-z0-9+]{4,20}$/;
+            return regExp.test(asValue);
+        }
+        // 회원가입하기
+        function sign_up() {
+            let nickName = $('#nickName').val();
+            let passWd = $('#passWd').val();
+            let passWdConfirm = $('#passWdConfirm').val();
+
+            if (nickName == "") {
+                alert("아이디를 입력해주세요.")
+                return;
+            } else if (!is_nickname(nickName)) {
+                alert("아이디는 최소 3자 이상입니다.")
+                return;
+            }
+
+            if (passWd == "") {
+                alert("패스워드를 입력해주세요.")
+                return;
+            } else if (passWd.includes(nickName)) {
+                alert("패스워드에 아이디를 포함하고 있습니다.")
+                return;
+            } else if (passWd !== passWdConfirm) {
+                alert("비빌번호가 동일하지 않습니다.")
+                return;
+            } else if (!is_password(passWd)) {
+                alert("비밀번호는 최소4자 이상입니다.")
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: `/user/signup`,
+                data: {
+                    'nickName': nickName,
+                    'passWd': passWd,
+                    
+                },
+                success: function (response) {
+                    if (response['result'] == "fail") {
+                        alert("아이디가 중복되었습니다");
+                    }
+                    else {
+                        alert("회원가입 축하합니다")
+                        window.location.href = "/signin"
+                    }
+
+                }
+            });
+        }
+
+
+
+        // 로그아웃 버튼
+        function log_out(){
+            $.removeCookie('user', {path: '/'});
+            location.href = '/signin';
+        }
+    </script>
+</head>
+
+<body>
+    <% if (user) { %>
+        <a style="float: right; color: red;" ><%= user %>님, 로그인중입니다.<button class="button is-dark" onclick="log_out();">로그아웃</button></a>
+    <% } %>
+
+    <div class="tabs is-medium">
+        <ul>
+            <li class="is-active" onclick="location.href='/write'"><a>작성페이지</a></li>
+            <li class="is-active" onclick="location.href='/list'"><a>목록페이지</a></li>
+            <li class="is-active" onclick="location.href='/signup'"><a>회원가입페이지</a></li>
+            <li class="is-active" onclick="location.href='/signin'"><a>로그인페이지</a></li>
+        </ul>
+      </div>
+    <section class="section">
+        <section class="hero is-small is-primary">
+            <div class="hero-body">
+                <p class="title">
+                    회원가입 페이지
+                </p>
+            </div>
+        </section>
+    </section>
+    <section class="section">
+        <div class="box" style="background-color: #c5ffd6;">
+            <div class="field">
+                <label class="label">닉네임</label>
+                <div class="control">
+                    <input id="nickName" class="input" type="text" placeholder="Text input">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">비밀번호</label>
+                <div class="control">
+                    <input id="passWd" class="input" type="text" placeholder="Text input">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">비밀번호 확인</label>
+                <div class="control">
+                    <input id="passWdConfirm" class="input" type="text" placeholder="Text input">
+                </div>
+            </div>
+
+
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-link" onclick="sign_up()">가입하기</button>
+                </div>
+                <div class="control">
+                    <button class="button is-link is-light">취소하기</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+
+</html>

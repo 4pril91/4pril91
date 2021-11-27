@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script>
+        const UserID = `<%= user %>`;
+        $(document).ready(function () {
+            if (UserID){
+                alert("이미 로그인이 되어있씁니다.")
+                location.href = '/list';
+            } else {
+                
+            }
+        });
+
+        // 로그인하기
+        function sign_in() {
+            let nickName = $('#nickName').val();
+            let passWd = $('#passWd').val();
+            
+            if (nickName == "") {
+                alert("아이디를 입력해주세요.")
+                return;
+            }
+
+            if (passWd == "") {
+                alert("패스워드를 입력해주세요.")
+                return;
+            }
+            
+            $.ajax({
+                type: "POST",
+                url: `/user/signin`,
+                data: {
+                    'nickName': nickName,
+                    'passWd': passWd
+                },
+                success: function (response) {
+                    if (response['result'] === "success") {
+                        alert("로그인 성공");
+                        // $.cookie('mytoken', response['token'], {path: '/'});
+                        window.location.href = "/list"
+                    }
+                    else if (response['result'] == "fail") {
+                        alert("아이디 또는 비밀번호를 확인하세요")
+                        
+                    }
+
+                }
+            });
+            
+        }
+        
+
+        // 로그아웃 버튼
+        function log_out(){
+            $.removeCookie('user', {path: '/'});
+            location.href = '/signin';
+        }
+        
+    </script>
+</head>
+
+<body> 
+    <% if (user) { %>
+        <a style="float: right; color: red;" ><%= user %>님, 로그인중입니다.<button class="button is-dark" onclick="log_out();">로그아웃</button></a>
+    <% } %>
+
+    <div class="tabs is-medium">
+        <ul>
+            <li class="is-active" onclick="location.href='/write'"><a>작성페이지</a></li>
+            <li class="is-active" onclick="location.href='/list'"><a>목록페이지</a></li>
+            <li class="is-active" onclick="location.href='/signup'"><a>회원가입페이지</a></li>
+            <li class="is-active" onclick="location.href='/signin'"><a>로그인페이지</a></li>
+        </ul>
+      </div>
+    <section class="section">
+        <section class="hero is-small is-primary" style="background-color: #be7cb3;">
+            <div class="hero-body">
+                <p class="title">
+                    로그인 페이지
+                </p>
+            </div>
+        </section>
+    </section>
+    <section class="section">
+        <div class="box" style="background-color: #be7cb3;">
+            <div class="field">
+                <label class="label">닉네임</label>
+                <div class="control">
+                    <input id="nickName" class="input" type="text" placeholder="Text input">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">비밀번호</label>
+                <div class="control">
+                    <input id="passWd" class="input" type="password" placeholder="*********">
+                </div>
+            </div>
+
+            <div class="field is-grouped">
+                <div class="control">
+                    <button class="button is-link" onclick="sign_in()">로그인</button>
+                </div>
+                <div class="control">
+                    <button class="button is-link is-light" onclick="location.href='/signup'">회원가입</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>
